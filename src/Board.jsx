@@ -1,77 +1,79 @@
-import React, { useState } from "react";
-import Square from "./Squares.jsx";
+import React from 'react';
+import Square from './Squares.jsx';
 
-export default function Board() {
-  const rows = 3; // Number of rows
-  const cols = 3; // Number of columns
-
-  // Generate an empty 2D array
-  const InitialBoard = new Array(rows)
-    .fill(null)
-    .map(() => new Array(cols).fill(null));
-  const [board, setBoard] = useState(InitialBoard);
-  const [xIsNext, setXIsNext] = useState(true);
+export default function Board({ squares, onSquareClick }) {
+  const rows = squares.length; // Number of rows
+  const cols = squares[0].length; // Number of columns
 
   // check winners
-  const directions =[
-    {dx:1, dy:0}, // Horizontal
-    {dx:0, dy:-1}, // Vertical
-    {dx:1, dy:1}, // Diagonal
-    {dx:1, dy:-1}, // Anti-Diagonal
-  ]
+  const directions = [
+    { dx: 1, dy: 0 }, // Horizontal
+    { dx: 0, dy: -1 }, // Vertical
+    { dx: 1, dy: 1 }, // Diagonal
+    { dx: 1, dy: -1 }, // Anti-Diagonal
+  ];
 
-  function calculateWinner(board){
-    for (let direction of directions){
-      const winner = checkDirections(board, direction)
-      if(winner) return winner
+  function calculateWinner(board) {
+    for (let direction of directions) {
+      const winner = checkDirections(board, direction);
+      if (winner) return winner;
     }
-    return null
+    return null;
   }
 
-  function checkDirections(board, direction){
-    const {dx, dy} = direction
-    for(let row = 0; row < rows; row++){
-      for(let col  = 0; col < cols; col++){
-        const xOrYSymbol = board[row][col]
-        let hasWinner = true
-        for(let square = 1; square < 3; square++){
-          const newRow = row + square * dx
-          const newCol = col + square * dy
+  function checkDirections(board, direction) {
+    const { dx, dy } = direction;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const xOrYSymbol = board[row][col];
+        let hasWinner = true;
+        for (let square = 1; square < 3; square++) {
+          const newRow = row + square * dx;
+          const newCol = col + square * dy;
 
           // check boundaries for newRow , newCol
-          if(newRow < 0 || newRow >= rows || newCol < 0 || newCol >= cols || board[newRow][newCol] !== xOrYSymbol){
-             hasWinner = false
-             break
+          if (
+            newRow < 0 ||
+            newRow >= rows ||
+            newCol < 0 ||
+            newCol >= cols ||
+            board[newRow][newCol] !== xOrYSymbol
+          ) {
+            hasWinner = false;
+            break;
           }
         }
-        if (hasWinner) return xOrYSymbol
+        if (hasWinner) return xOrYSymbol;
       }
     }
-    return null
+    return null;
   }
-  
 
   function handleOnSquareClick(rowIndex, colIndex) {
-    if (board[rowIndex][colIndex]) return;
+    if (squares[rowIndex][colIndex] || calculateWinner(squares)) return;
 
-    // create shallow copy of InitialBoard
-    const nextBoard = board.slice();
-    nextBoard[rowIndex][colIndex] = xIsNext ? "X" : "O";
-    setBoard(nextBoard);
-    setXIsNext(!xIsNext);
+    onSquareClick(rowIndex, colIndex);
   }
-  const winner = calculateWinner(board);
+
+  const winner = calculateWinner(squares);
   let status;
+
   if (winner) {
     status = `Winner: ${winner}`;
   } else {
-    status = `Next player: ${xIsNext ? "X" : "O"}`;
+    /*
+     flattening the 2D array to a 1D array, filter out the empty squares from the flattened 1D array 
+     and then checking the count of 'X' and 'O' symbols. 
+     If the count of 'X' symbols is even, then 'O' is the winner; 
+     otherwise, 'X' is the winner. 
+    */
+    status = `Next player: ${squares.flat().filter((val) => !val).length % 2 === 0 ? 'X' : 'O'}`;
   }
 
   return (
     <>
       <div className="status">{status}</div>
-      {board.map((row, rowIndex) => (
+      {squares.map((row, rowIndex) => (
         <div key={rowIndex} className="board-row">
           {row.map((colVal, colIndex) => (
             <Square
